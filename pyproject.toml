@@ -1,0 +1,74 @@
+[tool.poetry]
+name = "helenite"
+version = "0.1.0"
+description = ""
+authors = ["Jorge Jimenez <jorgeajimenezl17@gmail.com>"]
+readme = "README.md"
+
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+grpcio = "^1.64.1"
+grpcio-tools = "^1.64.1"
+
+[tool.poetry.group.dev.dependencies]
+bandit = "^1.7.7"
+mypy = "^1.8.0"
+pre-commit = "^3.6.0"
+ruff = "^0.2.0"
+
+[tool.ruff]
+line-length = 88
+output-format = "full"
+
+extend-exclude = [
+    "*_pb2.py",
+    "*_pb2_grpc.py",
+    "*_pb2.pyi",
+]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "B",
+    "C4",
+    "E",
+    "F",
+    "I001",
+    "SIM",
+    "T201",
+    "UP",
+]
+ignore = ["E501"]
+unfixable = ["B"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/*.py" = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+
+[tool.mypy]
+python_version = "3.11"
+show_error_codes = true
+strict = true
+disallow_untyped_calls = false
+disallow_any_generics = false
+warn_return_any = false
+ignore_missing_imports = true
+disable_error_code = "abstract"
+
+
+[tool.bandit]
+exclude_dirs = ['*/tests.py', '*/tests/*']
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
