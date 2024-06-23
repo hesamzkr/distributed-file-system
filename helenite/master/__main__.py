@@ -37,7 +37,9 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     async def CreateFile(
         self, request: CreateFileRequest, context: grpc.ServicerContext
     ) -> BoolValue:
-        await self.redis.hmset(f"file:{request.filename}", mapping={"filesize"})
+        await self.redis.hmset(
+            f"file:{request.filename}", mapping={"size": request.size}
+        )
         return BoolValue(value=True)
 
     async def DeleteFile(
@@ -49,6 +51,14 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             return BoolValue(value=True)
         else:
             return BoolValue(value=False)
+
+    async def GetFileSize(self, request: StringValue, context):
+        try:
+            filesize = await self.redis.hget(f"file:{request.value}", "filesize")
+            return StringValue(value=filesize)
+        except Exception as e:
+            logging.error(f"Error getting file size: {e}")
+            return StringValue(value="0")
 
     async def AllocateChunk(
         self, request: AllocateChunkRequest, context
@@ -63,7 +73,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
 
         return ChunkInformation(
             handle=handle,
-            servers=[ChunkServerAddress(address=ret[0])],
+            servers=[ChunkServerAddress(address=server) for server in ret],
         )
 
     async def GetChunkInformation(
@@ -131,7 +141,9 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
                         )
             except Exception as e:
                 await self.files_to_delete.put(filename)
-                logging.error(f"Error deleting file {filename}: {e}. Retrying in 60 seconds...")
+                logging.error(
+                    f"Error deleting file {filename}: {e}. Retrying in 60 seconds..."
+                )
 
 
 async def serve() -> None:
