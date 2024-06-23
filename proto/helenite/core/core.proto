@@ -17,6 +17,7 @@ service Master {
 
 service ChunkServer {
   rpc Heartbeat (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc DeleteFile(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
 }
 
 message CreateFileRequest {
