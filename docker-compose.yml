@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   master:
     build:
@@ -6,18 +8,24 @@ services:
     ports:
       - "50051:50051"
     volumes:
-    - type: bind
-      source: .
-      target: /app
+      - dfsvolume:/app/master
+    networks:
+      - dfsnetwork
 
   chunkserver:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "50052:50052"
     volumes:
-    - type: bind
-      source: .
-      target: /app
-  
+      - dfsvolume:/app/chunkserver/
+    networks:
+      - dfsnetwork
+    deploy:
+      replicas: 5
+
+networks:
+  dfsnetwork:
+    driver: bridge
+
+volumes:
+  dfsvolume:
