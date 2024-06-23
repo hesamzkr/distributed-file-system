@@ -1,3 +1,5 @@
+from google.protobuf import wrappers_pb2 as _wrappers_pb2
+from google.protobuf import empty_pb2 as _empty_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -34,19 +36,15 @@ class ChunkHandle(_message.Message):
     def __init__(self, handle: _Optional[str] = ...) -> None: ...
 
 class ChunkInformation(_message.Message):
-    __slots__ = ("handle", "primary", "secondaries")
+    __slots__ = ("handle", "servers")
     HANDLE_FIELD_NUMBER: _ClassVar[int]
-    PRIMARY_FIELD_NUMBER: _ClassVar[int]
-    SECONDARIES_FIELD_NUMBER: _ClassVar[int]
+    SERVERS_FIELD_NUMBER: _ClassVar[int]
     handle: ChunkHandle
-    primary: str
-    secondaries: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, handle: _Optional[_Union[ChunkHandle, _Mapping]] = ..., primary: _Optional[str] = ..., secondaries: _Optional[_Iterable[str]] = ...) -> None: ...
+    servers: _containers.RepeatedCompositeFieldContainer[ChunkServerAddress]
+    def __init__(self, handle: _Optional[_Union[ChunkHandle, _Mapping]] = ..., servers: _Optional[_Iterable[_Union[ChunkServerAddress, _Mapping]]] = ...) -> None: ...
 
-class ChunkServerInformation(_message.Message):
-    __slots__ = ("address", "port")
+class ChunkServerAddress(_message.Message):
+    __slots__ = ("address",)
     ADDRESS_FIELD_NUMBER: _ClassVar[int]
-    PORT_FIELD_NUMBER: _ClassVar[int]
     address: str
-    port: int
-    def __init__(self, address: _Optional[str] = ..., port: _Optional[int] = ...) -> None: ...
+    def __init__(self, address: _Optional[str] = ...) -> None: ...

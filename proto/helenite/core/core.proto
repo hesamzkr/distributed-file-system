@@ -2,6 +2,21 @@ syntax = "proto3";
 
 package helenite.core;
 
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
+service Master {
+  rpc CreateFile(CreateFileRequest) returns (google.protobuf.BoolValue) {}
+  rpc AllocateChunk(AllocateChunkRequest) returns (ChunkInformation) {}
+  rpc GetChunkInformation(ChunkHandle) returns (ChunkInformation) {}
+  rpc RegisterChunkServer(ChunkServerAddress) returns (google.protobuf.BoolValue) {}
+  rpc UnregisterChunkServer(ChunkServerAddress) returns (google.protobuf.Empty) {}
+}
+
+service ChunkServer {
+  rpc Heartbeat (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
 message CreateFileRequest {
   string filename = 1;
 }
@@ -22,11 +37,9 @@ message ChunkHandle {
 
 message ChunkInformation {
   ChunkHandle handle = 1;
-  string primary = 2;
-  repeated string secondaries = 3;
+  repeated ChunkServerAddress servers = 3;
 }
 
-message ChunkServerInformation {
+message ChunkServerAddress {
   string address = 1;
-  int32 port = 2;
 }

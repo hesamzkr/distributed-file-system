@@ -1,55 +1,110 @@
 import asyncio
 import logging
+import random
 import uuid
 
 import grpc
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue
 from redis import Redis
 
+from helenite.core import core_pb2_grpc
 from helenite.core.core_pb2 import (
     AllocateChunkRequest,
     ChunkHandle,
     ChunkInformation,
-    ChunkServerInformation,
+    ChunkServerAddress,
     CreateFileRequest,
 )
-from helenite.master import config, master_pb2_grpc
+from helenite.master import config
+
+scheduler = AsyncIOScheduler()
 
 
-class MasterServicer(master_pb2_grpc.MasterServicer):
+class MasterServicer(core_pb2_grpc.MasterServicer):
     def __init__(self) -> None:
         self.redis = Redis.from_url(config.REDIS_URL, decode_responses=True)
+        self.chunkservers = set()
 
-    async def CreateFile(self, request: CreateFileRequest, context) -> BoolValue:
+        # Register the scheduler to run every 60 seconds
+        # and check if are still alive and woking
+        # scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
+
+    async def CreateFile(
+        self, request: CreateFileRequest, context: grpc.ServicerContext
+    ) -> BoolValue:
         return BoolValue(value=True)
 
-    def AllocateChunk(self, request: AllocateChunkRequest, context):
+    async def AllocateChunk(
+        self, request: AllocateChunkRequest, context
+    ) -> ChunkInformation:
+        # Generate a random chunk handle and select random chunk servers
         handle = ChunkHandle(handle=uuid.uuid4().hex)
+        ret = random.sample(self.chunkservers, config.REPLICATION_FACTOR)
 
-    def GetChunkInformation(self, request: ChunkHandle, context) -> ChunkInformation:
-        return super().GetChunkInformation(request, context)
+        # Add the chunk handle to the file
+        await self.redis.lpush(f"file:{request.filename}", handle.handle)
+        await self.redis.lpush(f"chunk:{handle.handle}", *ret)
+
+        return ChunkInformation(
+            handle=handle,
+            servers=[ChunkServerAddress(address=server) for server in ret],
+        )
+
+    async def GetChunkInformation(
+        self, request: ChunkHandle, context: grpc.ServicerContext
+    ) -> ChunkInformation:
+        try:
+            servers = await self.redis.lrange(f"chunk:{request.handle}", 0, -1)
+            return ChunkInformation(
+                handle=request,
+                servers=[ChunkServerAddress(address=server) for server in servers],
+            )
+        except Exception as e:
+            logging.error(f"Error getting chunk information: {e}")
+            return ChunkInformation(handle=request, servers=[])
 
     async def RegisterChunkServer(
-        self, request: ChunkServerInformation, context
+        self, request: ChunkServerAddress, context: grpc.ServicerContext
     ) -> BoolValue:
+        self.chunkservers.add(request.address)
+        logging.info(f"Registered chunk server [{request.address}] successfully")
+        return BoolValue(value=True)
+
+    async def UnregisterChunkServer(
+        self, request: ChunkServerAddress, context: grpc.ServicerContext
+    ):
         try:
-            await self.redis.sadd("chunk_servers", f"{request.address}:{request.port}")
-            logging.info(
-                f"Registered chunk server {request.address}:{request.port} successfully"
+            self.chunkservers.remove(request.address)
+            logging.info(f"Unregistered chunk server [{request.address}] successfully")
+        except KeyError:
+            logging.error(
+                f"Chunk server [{request.address}] trying to say good bye!!, \
+                but it was not registered before."
             )
-            return BoolValue(value=True)
-        except Exception:
-            logging.exception(
-                f"Failed to register chunk server {request.address}:{request.port}"
-            )
-            return BoolValue(value=False)
+        return Empty()
+
+    async def check_chunkservers(self):
+        for server in self.chunkservers:
+            try:
+                address = f"{server}:50051"
+                async with grpc.aio.insecure_channel(address) as channel:
+                    stub = core_pb2_grpc.ChunkServerStub(channel)
+                    await stub.Heartbeat(Empty())
+            except Exception as e:
+                logging.error(f"Chunk server {server} is not alive anymore: {e}")
+                self.chunkservers.remove(server)
 
 
 async def serve() -> None:
     server = grpc.aio.server()
-    master_pb2_grpc.add_MasterServicer_to_server(MasterServicer(), server)
+    core_pb2_grpc.add_MasterServicer_to_server(MasterServicer(), server)
     server.add_insecure_port("[::]:50051")
     logging.info("Starting server on port 50051")
+
+    scheduler.start()
+
     await server.start()
     await server.wait_for_termination()
 
