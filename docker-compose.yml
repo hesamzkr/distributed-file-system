@@ -1,0 +1,23 @@
+services:
+  master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"
+    volumes:
+    - type: bind
+      source: .
+      target: /app
+
+  chunkserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50052:50052"
+    volumes:
+    - type: bind
+      source: .
+      target: /app
+  

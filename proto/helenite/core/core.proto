@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package helenite.core;
+
+message CreateFileRequest {
+  string path = 1;
+}
+
+message AllocateChunkRequest {
+  string path = 1;
+  int64 sequenceNumber = 2;
+}
+
+message BulkAllocateChunkRequest {
+  string path = 1;
+  int64 count = 2;
+}
+
+message ChunkHandle {
+  string handle = 1;
+}
+
+message ChunkInformation {
+  ChunkHandle handle = 1;
+  string primary = 2;
+  repeated string secondaries = 3;
+}
