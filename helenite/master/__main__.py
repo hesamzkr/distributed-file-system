@@ -26,15 +26,28 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     def __init__(self) -> None:
         self.redis = Redis.from_url(config.REDIS_URL, decode_responses=True)
         self.chunkservers = set()
+        # self.chunks_to_delete = asyncio.Queue()
+        self.files_to_delete = asyncio.Queue()
 
         # Register the scheduler to run every 60 seconds
         # and check if are still alive and woking
-        # scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
+        scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
 
     async def CreateFile(
         self, request: CreateFileRequest, context: grpc.ServicerContext
     ) -> BoolValue:
+        await self.redis.hmset(f"file:{request.filename}", mapping={"filesize"})
         return BoolValue(value=True)
+
+    async def DeleteFile(
+        self, request: CreateFileRequest, context: grpc.ServicerContext
+    ) -> BoolValue:
+        if await self.redis.exists(f"file:{request.filename}"):
+            await self.redis.delete(f"file:{request.filename}")
+            await self.files_to_delete.put(request.filename)
+            return BoolValue(value=True)
+        else:
+            return BoolValue(value=False)
 
     async def AllocateChunk(
         self, request: AllocateChunkRequest, context
@@ -44,12 +57,12 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         ret = random.sample(self.chunkservers, config.REPLICATION_FACTOR)
 
         # Add the chunk handle to the file
-        await self.redis.lpush(f"file:{request.filename}", handle.handle)
-        await self.redis.lpush(f"chunk:{handle.handle}", *ret)
+        await self.redis.lpush(f"chunks:{request.filename}", handle.handle)
+        await self.redis.lpush(f"servers:{handle.handle}", *ret)
 
         return ChunkInformation(
             handle=handle,
-            servers=[ChunkServerAddress(address=server) for server in ret],
+            servers=[ChunkServerAddress(address=ret[0])],
         )
 
     async def GetChunkInformation(

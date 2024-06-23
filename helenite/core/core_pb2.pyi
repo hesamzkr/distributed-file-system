@@ -8,10 +8,12 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class CreateFileRequest(_message.Message):
-    __slots__ = ("filename",)
+    __slots__ = ("filename", "size")
     FILENAME_FIELD_NUMBER: _ClassVar[int]
+    SIZE_FIELD_NUMBER: _ClassVar[int]
     filename: str
-    def __init__(self, filename: _Optional[str] = ...) -> None: ...
+    size: int
+    def __init__(self, filename: _Optional[str] = ..., size: _Optional[int] = ...) -> None: ...
 
 class AllocateChunkRequest(_message.Message):
     __slots__ = ("filename", "sequenceNumber")
@@ -20,14 +22,6 @@ class AllocateChunkRequest(_message.Message):
     filename: str
     sequenceNumber: int
     def __init__(self, filename: _Optional[str] = ..., sequenceNumber: _Optional[int] = ...) -> None: ...
-
-class BulkAllocateChunkRequest(_message.Message):
-    __slots__ = ("filename", "count")
-    FILENAME_FIELD_NUMBER: _ClassVar[int]
-    COUNT_FIELD_NUMBER: _ClassVar[int]
-    filename: str
-    count: int
-    def __init__(self, filename: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
 
 class ChunkHandle(_message.Message):
     __slots__ = ("handle",)

@@ -7,6 +7,8 @@ import "google/protobuf/empty.proto";
 
 service Master {
   rpc CreateFile(CreateFileRequest) returns (google.protobuf.BoolValue) {}
+  rpc DeleteFile(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
+  rpc GetFileSize(google.protobuf.StringValue) returns (google.protobuf.Int64Value) {}
   rpc AllocateChunk(AllocateChunkRequest) returns (ChunkInformation) {}
   rpc GetChunkInformation(ChunkHandle) returns (ChunkInformation) {}
   rpc RegisterChunkServer(ChunkServerAddress) returns (google.protobuf.BoolValue) {}
@@ -19,16 +21,12 @@ service ChunkServer {
 
 message CreateFileRequest {
   string filename = 1;
+  int64 size = 2;
 }
 
 message AllocateChunkRequest {
   string filename = 1;
   int64 sequenceNumber = 2;
-}
-
-message BulkAllocateChunkRequest {
-  string filename = 1;
-  int64 count = 2;
 }
 
 message ChunkHandle {
@@ -37,9 +35,13 @@ message ChunkHandle {
 
 message ChunkInformation {
   ChunkHandle handle = 1;
-  repeated ChunkServerAddress servers = 3;
+  repeated ChunkServerAddress servers = 2;
 }
 
 message ChunkServerAddress {
   string address = 1;
 }
+
+// message LeaseChunkList {
+//  repeated ChunkHandle chunks = 1;
+//}

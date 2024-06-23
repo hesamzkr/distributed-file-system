@@ -46,6 +46,16 @@ class MasterStub(object):
                 request_serializer=helenite_dot_core_dot_core__pb2.CreateFileRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
                 _registered_method=True)
+        self.DeleteFile = channel.unary_unary(
+                '/helenite.core.Master/DeleteFile',
+                request_serializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+                _registered_method=True)
+        self.GetFileSize = channel.unary_unary(
+                '/helenite.core.Master/GetFileSize',
+                request_serializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_wrappers__pb2.Int64Value.FromString,
+                _registered_method=True)
         self.AllocateChunk = channel.unary_unary(
                 '/helenite.core.Master/AllocateChunk',
                 request_serializer=helenite_dot_core_dot_core__pb2.AllocateChunkRequest.SerializeToString,
@@ -72,6 +82,18 @@ class MasterServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def CreateFile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteFile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFileSize(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -108,6 +130,16 @@ def add_MasterServicer_to_server(servicer, server):
                     servicer.CreateFile,
                     request_deserializer=helenite_dot_core_dot_core__pb2.CreateFileRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.SerializeToString,
+            ),
+            'DeleteFile': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteFile,
+                    request_deserializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.FromString,
+                    response_serializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.SerializeToString,
+            ),
+            'GetFileSize': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFileSize,
+                    request_deserializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.FromString,
+                    response_serializer=google_dot_protobuf_dot_wrappers__pb2.Int64Value.SerializeToString,
             ),
             'AllocateChunk': grpc.unary_unary_rpc_method_handler(
                     servicer.AllocateChunk,
@@ -157,6 +189,60 @@ class Master(object):
             '/helenite.core.Master/CreateFile',
             helenite_dot_core_dot_core__pb2.CreateFileRequest.SerializeToString,
             google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteFile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.core.Master/DeleteFile',
+            google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+            google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFileSize(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.core.Master/GetFileSize',
+            google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+            google_dot_protobuf_dot_wrappers__pb2.Int64Value.FromString,
             options,
             channel_credentials,
             insecure,
