@@ -18,6 +18,9 @@ service Master {
 service ChunkServer {
   rpc Heartbeat (google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc DeleteFile(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
+  rpc WriteChunk(ChunkData) returns (google.protobuf.BoolValue) {}
+  rpc ReadChunk(ChunkHandle) returns (google.protobuf.BytesValue) {}
+  rpc ReplicateChunk(ChunkData) returns (google.protobuf.BoolValue) {}
 }
 
 message CreateFileRequest {
@@ -35,8 +38,14 @@ message ChunkHandle {
 }
 
 message ChunkInformation {
-  ChunkHandle handle = 1;
+  string handle = 1;
   repeated ChunkServerAddress servers = 2;
+}
+
+message ChunkData {
+  string filename = 1;
+  string handle = 2;
+  bytes data = 3;
 }
 
 message ChunkServerAddress {

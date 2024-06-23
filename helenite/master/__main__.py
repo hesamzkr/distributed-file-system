@@ -64,7 +64,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         self, request: AllocateChunkRequest, context
     ) -> ChunkInformation:
         # Generate a random chunk handle and select random chunk servers
-        handle = ChunkHandle(handle=uuid.uuid4().hex)
+        handle = handle=uuid.uuid4().hex
         ret = random.sample(self.chunkservers, config.REPLICATION_FACTOR)
 
         # Add the chunk handle to the file
@@ -82,7 +82,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         try:
             servers = await self.redis.lrange(f"chunks:{request.handle}", 0, -1)
             return ChunkInformation(
-                handle=request,
+                handle=request.handle,
                 servers=[ChunkServerAddress(address=server) for server in servers],
             )
         except Exception as e:
@@ -131,7 +131,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
 
                 for server in servers:
                     try:
-                        address = f"{server}:50051"
+                        address = f"{server}:50052"
                         async with grpc.aio.insecure_channel(address) as channel:
                             stub = core_pb2_grpc.ChunkServerStub(channel)
                             await stub.DeleteFile(StringValue(value=filename))
