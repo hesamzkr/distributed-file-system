@@ -9,4 +9,5 @@ service Master {
   rpc CreateFile(helenite.core.CreateFileRequest) returns (google.protobuf.BoolValue) {}
   rpc AllocateChunk(helenite.core.AllocateChunkRequest) returns (helenite.core.ChunkInformation) {}
   rpc GetChunkInformation(helenite.core.ChunkHandle) returns (helenite.core.ChunkInformation) {}
+  rpc RegisterChunkServer(helenite.core.ChunkServerInformation) returns (google.protobuf.BoolValue) {}
 }

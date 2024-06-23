@@ -55,6 +55,11 @@ class MasterStub(object):
                 request_serializer=helenite_dot_core_dot_core__pb2.ChunkHandle.SerializeToString,
                 response_deserializer=helenite_dot_core_dot_core__pb2.ChunkInformation.FromString,
                 _registered_method=True)
+        self.RegisterChunkServer = channel.unary_unary(
+                '/helenite.master.Master/RegisterChunkServer',
+                request_serializer=helenite_dot_core_dot_core__pb2.ChunkServerInformation.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+                _registered_method=True)
 
 
 class MasterServicer(object):
@@ -78,6 +83,12 @@ class MasterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RegisterChunkServer(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MasterServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -95,6 +106,11 @@ def add_MasterServicer_to_server(servicer, server):
                     servicer.GetChunkInformation,
                     request_deserializer=helenite_dot_core_dot_core__pb2.ChunkHandle.FromString,
                     response_serializer=helenite_dot_core_dot_core__pb2.ChunkInformation.SerializeToString,
+            ),
+            'RegisterChunkServer': grpc.unary_unary_rpc_method_handler(
+                    servicer.RegisterChunkServer,
+                    request_deserializer=helenite_dot_core_dot_core__pb2.ChunkServerInformation.FromString,
+                    response_serializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -178,6 +194,33 @@ class Master(object):
             '/helenite.master.Master/GetChunkInformation',
             helenite_dot_core_dot_core__pb2.ChunkHandle.SerializeToString,
             helenite_dot_core_dot_core__pb2.ChunkInformation.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RegisterChunkServer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.master.Master/RegisterChunkServer',
+            helenite_dot_core_dot_core__pb2.ChunkServerInformation.SerializeToString,
+            google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
             options,
             channel_credentials,
             insecure,

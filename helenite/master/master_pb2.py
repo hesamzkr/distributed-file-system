@@ -16,7 +16,7 @@ from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb
 from helenite.core import core_pb2 as helenite_dot_core_dot_core__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1chelenite/master/master.proto\x12\x0fhelenite.master\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x18helenite/core/core.proto2\x85\x02\n\x06Master\x12L\n\nCreateFile\x12 .helenite.core.CreateFileRequest\x1a\x1a.google.protobuf.BoolValue\"\x00\x12W\n\rAllocateChunk\x12#.helenite.core.AllocateChunkRequest\x1a\x1f.helenite.core.ChunkInformation\"\x00\x12T\n\x13GetChunkInformation\x12\x1a.helenite.core.ChunkHandle\x1a\x1f.helenite.core.ChunkInformation\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1chelenite/master/master.proto\x12\x0fhelenite.master\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x18helenite/core/core.proto2\xe1\x02\n\x06Master\x12L\n\nCreateFile\x12 .helenite.core.CreateFileRequest\x1a\x1a.google.protobuf.BoolValue\"\x00\x12W\n\rAllocateChunk\x12#.helenite.core.AllocateChunkRequest\x1a\x1f.helenite.core.ChunkInformation\"\x00\x12T\n\x13GetChunkInformation\x12\x1a.helenite.core.ChunkHandle\x1a\x1f.helenite.core.ChunkInformation\"\x00\x12Z\n\x13RegisterChunkServer\x12%.helenite.core.ChunkServerInformation\x1a\x1a.google.protobuf.BoolValue\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -24,5 +24,5 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'helenite.master.master_pb2'
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_MASTER']._serialized_start=108
-  _globals['_MASTER']._serialized_end=369
+  _globals['_MASTER']._serialized_end=461
 # @@protoc_insertion_point(module_scope)

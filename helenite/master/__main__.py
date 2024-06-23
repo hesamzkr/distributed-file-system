@@ -1,29 +1,48 @@
 import asyncio
 import logging
+import uuid
 
 import grpc
+from google.protobuf.wrappers_pb2 import BoolValue
+from redis import Redis
 
 from helenite.core.core_pb2 import (
     AllocateChunkRequest,
     ChunkHandle,
     ChunkInformation,
+    ChunkServerInformation,
     CreateFileRequest,
 )
-from helenite.master import master_pb2_grpc
+from helenite.master import config, master_pb2_grpc
 
 
 class MasterServicer(master_pb2_grpc.MasterServicer):
     def __init__(self) -> None:
-        pass
+        self.redis = Redis.from_url(config.REDIS_URL, decode_responses=True)
 
-    def CreateFile(self, request: CreateFileRequest, context) -> bool:
-        return super().CreateFile(request, context)
+    async def CreateFile(self, request: CreateFileRequest, context) -> BoolValue:
+        return BoolValue(value=True)
 
     def AllocateChunk(self, request: AllocateChunkRequest, context):
-        return super().AllocateChunk(request, context)
+        handle = ChunkHandle(handle=uuid.uuid4().hex)
 
     def GetChunkInformation(self, request: ChunkHandle, context) -> ChunkInformation:
         return super().GetChunkInformation(request, context)
+
+    async def RegisterChunkServer(
+        self, request: ChunkServerInformation, context
+    ) -> BoolValue:
+        try:
+            await self.redis.sadd("chunk_servers", f"{request.address}:{request.port}")
+            logging.info(
+                f"Registered chunk server {request.address}:{request.port} successfully"
+            )
+            return BoolValue(value=True)
+        except Exception:
+            logging.exception(
+                f"Failed to register chunk server {request.address}:{request.port}"
+            )
+            return BoolValue(value=False)
 
 
 async def serve() -> None:

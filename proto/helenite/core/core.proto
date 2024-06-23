@@ -25,3 +25,8 @@ message ChunkInformation {
   string primary = 2;
   repeated string secondaries = 3;
 }
+
+message ChunkServerInformation {
+  string address = 1;
+  int32 port = 2;
+}

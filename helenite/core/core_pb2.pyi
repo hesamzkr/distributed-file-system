@@ -42,3 +42,11 @@ class ChunkInformation(_message.Message):
     primary: str
     secondaries: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, handle: _Optional[_Union[ChunkHandle, _Mapping]] = ..., primary: _Optional[str] = ..., secondaries: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class ChunkServerInformation(_message.Message):
+    __slots__ = ("address", "port")
+    ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    PORT_FIELD_NUMBER: _ClassVar[int]
+    address: str
+    port: int
+    def __init__(self, address: _Optional[str] = ..., port: _Optional[int] = ...) -> None: ...
