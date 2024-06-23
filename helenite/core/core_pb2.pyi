@@ -6,26 +6,26 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class CreateFileRequest(_message.Message):
-    __slots__ = ("path",)
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    path: str
-    def __init__(self, path: _Optional[str] = ...) -> None: ...
+    __slots__ = ("filename",)
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
+    filename: str
+    def __init__(self, filename: _Optional[str] = ...) -> None: ...
 
 class AllocateChunkRequest(_message.Message):
-    __slots__ = ("path", "sequenceNumber")
-    PATH_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("filename", "sequenceNumber")
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
     SEQUENCENUMBER_FIELD_NUMBER: _ClassVar[int]
-    path: str
+    filename: str
     sequenceNumber: int
-    def __init__(self, path: _Optional[str] = ..., sequenceNumber: _Optional[int] = ...) -> None: ...
+    def __init__(self, filename: _Optional[str] = ..., sequenceNumber: _Optional[int] = ...) -> None: ...
 
 class BulkAllocateChunkRequest(_message.Message):
-    __slots__ = ("path", "count")
-    PATH_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("filename", "count")
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
     COUNT_FIELD_NUMBER: _ClassVar[int]
-    path: str
+    filename: str
     count: int
-    def __init__(self, path: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
+    def __init__(self, filename: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
 
 class ChunkHandle(_message.Message):
     __slots__ = ("handle",)

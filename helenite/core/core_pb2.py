@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18helenite/core/core.proto\x12\rhelenite.core\"!\n\x11\x43reateFileRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"<\n\x14\x41llocateChunkRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x16\n\x0esequenceNumber\x18\x02 \x01(\x03\"7\n\x18\x42ulkAllocateChunkRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\"\x1d\n\x0b\x43hunkHandle\x12\x0e\n\x06handle\x18\x01 \x01(\t\"d\n\x10\x43hunkInformation\x12*\n\x06handle\x18\x01 \x01(\x0b\x32\x1a.helenite.core.ChunkHandle\x12\x0f\n\x07primary\x18\x02 \x01(\t\x12\x13\n\x0bsecondaries\x18\x03 \x03(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18helenite/core/core.proto\x12\rhelenite.core\"%\n\x11\x43reateFileRequest\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"@\n\x14\x41llocateChunkRequest\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x16\n\x0esequenceNumber\x18\x02 \x01(\x03\";\n\x18\x42ulkAllocateChunkRequest\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\"\x1d\n\x0b\x43hunkHandle\x12\x0e\n\x06handle\x18\x01 \x01(\t\"d\n\x10\x43hunkInformation\x12*\n\x06handle\x18\x01 \x01(\x0b\x32\x1a.helenite.core.ChunkHandle\x12\x0f\n\x07primary\x18\x02 \x01(\t\x12\x13\n\x0bsecondaries\x18\x03 \x03(\tb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -22,13 +22,13 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'helenite.core.core_pb2', _g
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_CREATEFILEREQUEST']._serialized_start=43
-  _globals['_CREATEFILEREQUEST']._serialized_end=76
-  _globals['_ALLOCATECHUNKREQUEST']._serialized_start=78
-  _globals['_ALLOCATECHUNKREQUEST']._serialized_end=138
-  _globals['_BULKALLOCATECHUNKREQUEST']._serialized_start=140
-  _globals['_BULKALLOCATECHUNKREQUEST']._serialized_end=195
-  _globals['_CHUNKHANDLE']._serialized_start=197
-  _globals['_CHUNKHANDLE']._serialized_end=226
-  _globals['_CHUNKINFORMATION']._serialized_start=228
-  _globals['_CHUNKINFORMATION']._serialized_end=328
+  _globals['_CREATEFILEREQUEST']._serialized_end=80
+  _globals['_ALLOCATECHUNKREQUEST']._serialized_start=82
+  _globals['_ALLOCATECHUNKREQUEST']._serialized_end=146
+  _globals['_BULKALLOCATECHUNKREQUEST']._serialized_start=148
+  _globals['_BULKALLOCATECHUNKREQUEST']._serialized_end=207
+  _globals['_CHUNKHANDLE']._serialized_start=209
+  _globals['_CHUNKHANDLE']._serialized_end=238
+  _globals['_CHUNKINFORMATION']._serialized_start=240
+  _globals['_CHUNKINFORMATION']._serialized_end=340
 # @@protoc_insertion_point(module_scope)
