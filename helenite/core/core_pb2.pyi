@@ -1,3 +1,5 @@
+from google.protobuf import wrappers_pb2 as _wrappers_pb2
+from google.protobuf import empty_pb2 as _empty_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -6,26 +8,20 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class CreateFileRequest(_message.Message):
-    __slots__ = ("path",)
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    path: str
-    def __init__(self, path: _Optional[str] = ...) -> None: ...
+    __slots__ = ("filename", "size")
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
+    SIZE_FIELD_NUMBER: _ClassVar[int]
+    filename: str
+    size: int
+    def __init__(self, filename: _Optional[str] = ..., size: _Optional[int] = ...) -> None: ...
 
 class AllocateChunkRequest(_message.Message):
-    __slots__ = ("path", "sequenceNumber")
-    PATH_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("filename", "sequenceNumber")
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
     SEQUENCENUMBER_FIELD_NUMBER: _ClassVar[int]
-    path: str
+    filename: str
     sequenceNumber: int
-    def __init__(self, path: _Optional[str] = ..., sequenceNumber: _Optional[int] = ...) -> None: ...
-
-class BulkAllocateChunkRequest(_message.Message):
-    __slots__ = ("path", "count")
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    COUNT_FIELD_NUMBER: _ClassVar[int]
-    path: str
-    count: int
-    def __init__(self, path: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
+    def __init__(self, filename: _Optional[str] = ..., sequenceNumber: _Optional[int] = ...) -> None: ...
 
 class ChunkHandle(_message.Message):
     __slots__ = ("handle",)
@@ -34,11 +30,15 @@ class ChunkHandle(_message.Message):
     def __init__(self, handle: _Optional[str] = ...) -> None: ...
 
 class ChunkInformation(_message.Message):
-    __slots__ = ("handle", "primary", "secondaries")
+    __slots__ = ("handle", "servers")
     HANDLE_FIELD_NUMBER: _ClassVar[int]
-    PRIMARY_FIELD_NUMBER: _ClassVar[int]
-    SECONDARIES_FIELD_NUMBER: _ClassVar[int]
+    SERVERS_FIELD_NUMBER: _ClassVar[int]
     handle: ChunkHandle
-    primary: str
-    secondaries: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, handle: _Optional[_Union[ChunkHandle, _Mapping]] = ..., primary: _Optional[str] = ..., secondaries: _Optional[_Iterable[str]] = ...) -> None: ...
+    servers: _containers.RepeatedCompositeFieldContainer[ChunkServerAddress]
+    def __init__(self, handle: _Optional[_Union[ChunkHandle, _Mapping]] = ..., servers: _Optional[_Iterable[_Union[ChunkServerAddress, _Mapping]]] = ...) -> None: ...
+
+class ChunkServerAddress(_message.Message):
+    __slots__ = ("address",)
+    ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    address: str
+    def __init__(self, address: _Optional[str] = ...) -> None: ...

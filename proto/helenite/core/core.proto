@@ -2,18 +2,32 @@ syntax = "proto3";
 
 package helenite.core;
 
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
+service Master {
+  rpc CreateFile(CreateFileRequest) returns (google.protobuf.BoolValue) {}
+  rpc DeleteFile(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
+  rpc GetFileSize(google.protobuf.StringValue) returns (google.protobuf.Int64Value) {}
+  rpc AllocateChunk(AllocateChunkRequest) returns (ChunkInformation) {}
+  rpc GetChunkInformation(ChunkHandle) returns (ChunkInformation) {}
+  rpc RegisterChunkServer(ChunkServerAddress) returns (google.protobuf.BoolValue) {}
+  rpc UnregisterChunkServer(ChunkServerAddress) returns (google.protobuf.Empty) {}
+}
+
+service ChunkServer {
+  rpc Heartbeat (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc DeleteFile(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
+}
+
 message CreateFileRequest {
-  string path = 1;
+  string filename = 1;
+  int64 size = 2;
 }
 
 message AllocateChunkRequest {
-  string path = 1;
+  string filename = 1;
   int64 sequenceNumber = 2;
-}
-
-message BulkAllocateChunkRequest {
-  string path = 1;
-  int64 count = 2;
 }
 
 message ChunkHandle {
@@ -22,6 +36,13 @@ message ChunkHandle {
 
 message ChunkInformation {
   ChunkHandle handle = 1;
-  string primary = 2;
-  repeated string secondaries = 3;
+  repeated ChunkServerAddress servers = 2;
 }
+
+message ChunkServerAddress {
+  string address = 1;
+}
+
+// message LeaseChunkList {
+//  repeated ChunkHandle chunks = 1;
+//}
