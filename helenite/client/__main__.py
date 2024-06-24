@@ -35,7 +35,10 @@ async def create_file(
         handlers = []
 
         # allocate chunks for file
-        for _ in range(file.size // 1024 + 1):
+        num_chunks = file.size // 1024
+        if file.size % 1024 != 0:
+            num_chunks += 1
+        for _ in range(num_chunks):
             req = AllocateChunkRequest(filename=file.filename)
             info = await stub.AllocateChunk(req)
             handlers.append(info)
@@ -78,7 +81,6 @@ async def read_file(filename: str):
                 stub = core_pb2_grpc.ChunkServerStub(channel)
 
                 data = await stub.ReadChunk(ChunkHandle(handle=chunk))
-                print(data.value)
                 yield data.value
 
     return StreamingResponse(

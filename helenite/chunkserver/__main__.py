@@ -120,8 +120,6 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
         chunk_path = os.path.join(config.CHUNKS_DIR, request.handle)
 
         try:
-
-            print(chunk_path)
             with open(chunk_path, "rb") as f:
                 data = f.read()
             return BytesValue(value=data)
