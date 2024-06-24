@@ -27,10 +27,18 @@ services:
     deploy:
       replicas: 2
 
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m helenite.client
+    ports:
+      - "8000:8000"
+    volumes:
+      - dfsvolume:/app/client
+
   redis-master:
-    image: redis:latest 
-    environment:
-      - REDIS_URL=redis://localhost:6379
+    image: redis:latest
     volumes:
       - dfsvolume:/app/data/
     networks:
