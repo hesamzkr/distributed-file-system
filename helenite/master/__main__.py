@@ -113,7 +113,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         try:
             for server in self.chunkservers:
                 try:
-                    address = f"{server}:50051"
+                    address = f"{server}:50052"
                     async with grpc.aio.insecure_channel(address) as channel:
                         stub = core_pb2_grpc.ChunkServerStub(channel)
                         await stub.Heartbeat(Empty())
