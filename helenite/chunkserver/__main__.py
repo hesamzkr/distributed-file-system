@@ -48,7 +48,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
     async def write_chunk(
         self, request: ChunkData, context: ServicerContext
     ) -> ChunkInformation | None:
-        info = await self.stub.GetChunkInformation(request.handle)
+        info = await self.stub.GetChunkInformation(StringValue(value=request.handle))
 
         if config.HOST not in [server.address for server in info.servers]:
             logging.error(
@@ -60,14 +60,18 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
             return
 
         try:
+            # TODO: Remove this shit (create the folders)
+            os.makedirs(os.path.join(config.NAMESPACE_DIR, request.filename), exist_ok=True)
+            os.makedirs(config.CHUNKS_DIR, exist_ok=True)
+
             # Write the chunk to disk
             chunk_path = os.path.join(
                 config.NAMESPACE_DIR, request.filename, request.handle
             )
-            os.symlink(chunk_path, os.path.join(config.CHUNKS_DIR, request.handle))
+
             with open(chunk_path, "wb") as f:
                 f.write(request.data)
-
+            os.symlink(chunk_path, os.path.join(config.CHUNKS_DIR, request.handle))
             return info
         except Exception as e:
             logging.error(f"Error writing chunk to disk: {e}")
@@ -102,6 +106,9 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
                     await stub.ReplicateChunk(request)
             except Exception as e:
                 logging.error(f"Error replicating chunk: {e}")
+                return BoolValue(value=False)
+
+        return BoolValue(value=True)
 
     async def ReadChunk(
         self, request: ChunkHandle, context: ServicerContext

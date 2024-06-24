@@ -7,7 +7,7 @@ import grpc
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, StringValue
-from redis import Redis
+from redis.asyncio import Redis
 
 from helenite.core import core_pb2_grpc
 from helenite.core.core_pb2 import (
@@ -31,13 +31,13 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
 
         # Register the scheduler to run every 60 seconds
         # and check if are still alive and woking
-        scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
-        scheduler.add_job(self.garbage_collector, "interval", seconds=60)
+        # scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
+        # scheduler.add_job(self.garbage_collector, "interval", seconds=60)
 
     async def CreateFile(
         self, request: CreateFileRequest, context: grpc.ServicerContext
     ) -> BoolValue:
-        await self.redis.hmset(
+        await self.redis.hset(
             f"file:{request.filename}", mapping={"size": request.size}
         )
         return BoolValue(value=True)
@@ -64,12 +64,12 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         self, request: AllocateChunkRequest, context
     ) -> ChunkInformation:
         # Generate a random chunk handle and select random chunk servers
-        handle = handle=uuid.uuid4().hex
-        ret = random.sample(self.chunkservers, config.REPLICATION_FACTOR)
+        handle = handle = uuid.uuid4().hex
+        ret = random.sample(list(self.chunkservers), config.REPLICATION_FACTOR)
 
         # Add the chunk handle to the file
-        await self.redis.lpush(f"chunks:{request.filename}", handle.handle)
-        await self.redis.lpush(f"servers:{handle.handle}", *ret)
+        await self.redis.lpush(f"chunks:{request.filename}", handle)
+        await self.redis.lpush(f"servers:{handle}", *ret)
 
         return ChunkInformation(
             handle=handle,
@@ -80,7 +80,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         self, request: ChunkHandle, context: grpc.ServicerContext
     ) -> ChunkInformation:
         try:
-            servers = await self.redis.lrange(f"chunks:{request.handle}", 0, -1)
+            servers = await self.redis.lrange(f"servers:{request.handle}", 0, -1)
             return ChunkInformation(
                 handle=request.handle,
                 servers=[ChunkServerAddress(address=server) for server in servers],
@@ -110,15 +110,19 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         return Empty()
 
     async def check_chunkservers(self):
-        for server in self.chunkservers:
-            try:
-                address = f"{server}:50052"
-                async with grpc.aio.insecure_channel(address) as channel:
-                    stub = core_pb2_grpc.ChunkServerStub(channel)
-                    await stub.Heartbeat(Empty())
-            except Exception as e:
-                logging.error(f"Chunk server {server} is not alive anymore: {e}")
-                self.chunkservers.remove(server)
+        try:
+            for server in self.chunkservers:
+                try:
+                    address = f"{server}:50051"
+                    async with grpc.aio.insecure_channel(address) as channel:
+                        stub = core_pb2_grpc.ChunkServerStub(channel)
+                        await stub.Heartbeat(Empty())
+                except Exception as e:
+                    logging.error(f"Chunk server {server} is not alive anymore: {e}")
+                    self.chunkservers.remove(server)
+        except RuntimeError:
+            # TODO: this should only happens when the list changes over the iteration
+            pass
 
     async def garbage_collector(self):
         while not self.files_to_delete.empty():

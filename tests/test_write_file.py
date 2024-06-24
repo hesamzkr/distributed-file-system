@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import random
 
 import grpc
 
@@ -18,7 +17,7 @@ async def main() -> None:
         handle2 = await stub.AllocateChunk(AllocateChunkRequest(filename="test.txt"))
 
     async with grpc.aio.insecure_channel("localhost:50052") as channel:
-        stub = core_pb2_grpc.ChunkServer(channel)
+        stub = core_pb2_grpc.ChunkServerStub(channel)
         data1 = ChunkData(
             filename="test.txt",
             handle=handle1.handle,
@@ -35,4 +34,4 @@ async def main() -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.run(main())
