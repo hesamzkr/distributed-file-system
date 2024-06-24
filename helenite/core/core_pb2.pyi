@@ -52,3 +52,9 @@ class ChunkServerAddress(_message.Message):
     ADDRESS_FIELD_NUMBER: _ClassVar[int]
     address: str
     def __init__(self, address: _Optional[str] = ...) -> None: ...
+
+class FileInfo(_message.Message):
+    __slots__ = ("chunks",)
+    CHUNKS_FIELD_NUMBER: _ClassVar[int]
+    chunks: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, chunks: _Optional[_Iterable[str]] = ...) -> None: ...

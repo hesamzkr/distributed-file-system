@@ -32,6 +32,7 @@ async def main() -> None:
         )
         await stub.WriteChunk(data2)
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

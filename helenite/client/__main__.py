@@ -1,78 +1,90 @@
-from flask import Flask, request, jsonify
-import os
-import random
-import string
+from typing import Annotated
 
-from helenite.client.helenite_client import HeleniteClient
+import grpc
+import uvicorn
+from fastapi import FastAPI, File, Response, UploadFile, status
+from fastapi.responses import StreamingResponse
+from google.protobuf.wrappers_pb2 import StringValue
 
-app = Flask(__name__)
-# TODO from configuration
-client = HeleniteClient("localhost:50051")
+from helenite.client import config
+from helenite.core import core_pb2_grpc
+from helenite.core.core_pb2 import (
+    AllocateChunkRequest,
+    ChunkData,
+    ChunkHandle,
+    CreateFileRequest,
+)
 
-
-def generate_random_text_file(filename, size):
-    with open(filename, 'w') as f:
-        f.write(''.join(random.choices(string.ascii_letters + string.digits, k=size)))
-
-
-def split_file_into_chunks(filename, chunk_size=1024):
-    with open(filename, 'rb') as f:
-        chunk_number = 0
-        while True:
-            chunk = f.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk_number, chunk
-            chunk_number += 1
+app = FastAPI(
+    title="Helenite Client",
+    version="1.0",
+    description="",
+)
 
 
-@app.route('/create_file', methods=['POST'])
-def create_file():
-    data = request.json
-    filename = data.get('filename')
-    size = data.get('size')
-    if filename is None or size is None:
-        return jsonify({"error": "Invalid input"}), 400
+@app.post("/create-file")
+async def create_file(
+    file: Annotated[UploadFile, File()],
+):
+    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+        stub = core_pb2_grpc.MasterStub(channel)
 
-    generate_random_text_file(filename, size)
-    result = client.create_file(filename, size)
-    for chunk_number, chunk in split_file_into_chunks(filename):
-        client.allocate_chunk(filename, chunk_number)
-    os.remove(filename)
-    return jsonify({"result": result})
+        req = CreateFileRequest(filename=file.filename, size=file.size)
+        await stub.CreateFile(req)
+
+        handlers = []
+
+        # allocate chunks for file
+        for _ in range(file.size // 1024 + 1):
+            req = AllocateChunkRequest(filename=file.filename)
+            info = await stub.AllocateChunk(req)
+            handlers.append(info)
+
+    p = 0
+    while True:
+        chunk = await file.read(1024)
+        if not chunk:
+            break
+
+        handler = handlers[p]
+        p += 1
+        address = f"{handler.servers[0].address}:50052"
+        async with grpc.aio.insecure_channel(address) as channel:
+            stub = core_pb2_grpc.ChunkServerStub(channel)
+
+            req = ChunkData(filename=file.filename, handle=handler.handle, data=chunk)
+            await stub.WriteChunk(req)
+
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
-@app.route('/delete_file', methods=['POST'])
-def delete_file():
-    data = request.json
-    filename = data.get('filename')
-    if filename is None:
-        return jsonify({"error": "Invalid input"}), 400
-    result = client.delete_file(filename)
-    return jsonify({"result": result})
+@app.get("/read-file/{filename}")
+async def read_file(filename: str):
+    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+        stub = core_pb2_grpc.MasterStub(channel)
 
+        req = StringValue(value=filename)
+        file_info = await stub.GetFileInformation(req)
+        ret = []
 
-@app.route('/allocate_chunk', methods=['POST'])
-def allocate_chunk():
-    data = request.json
-    filename = data.get('filename')
-    sequence_number = data.get('sequence_number')
-    if filename is None or sequence_number is None:
-        return jsonify({"error": "Invalid input"}), 400
-    result = client.allocate_chunk(filename, sequence_number)
-    return jsonify({"result": result})
+        for chunk in file_info.chunks:
+            info = await stub.GetChunkInformation(ChunkHandle(handle=chunk))
+            ret.append((chunk, info.servers[0].address))
 
+    async def iter_file():
+        for chunk, address in ret:
+            address = f"{address}:50052"
+            async with grpc.aio.insecure_channel(address) as channel:
+                stub = core_pb2_grpc.ChunkServerStub(channel)
 
-@app.route('/get_chunk_information', methods=['POST'])
-def get_chunk_information():
-    data = request.json
-    handle = data.get('handle')
-    if handle is None:
-        return jsonify({"error": "Invalid input"}), 400
-    result = client.get_chunk_information(handle)
-    return jsonify({"result": result})
+                data = await stub.ReadChunk(ChunkHandle(handle=chunk))
+                print(data.value)
+                yield data.value
+
+    return StreamingResponse(
+        iter_file(), media_type="application/octet-stream", status_code=status.HTTP_200_OK
+    )
 
 
 if __name__ == "__main__":
-    # TODO from configuration
-    app.run(host='0.0.0.0', port=8080)
+    uvicorn.run(app, host="localhost", port=8000)

@@ -61,6 +61,11 @@ class MasterStub(object):
                 request_serializer=helenite_dot_core_dot_core__pb2.AllocateChunkRequest.SerializeToString,
                 response_deserializer=helenite_dot_core_dot_core__pb2.ChunkInformation.FromString,
                 _registered_method=True)
+        self.GetFileInformation = channel.unary_unary(
+                '/helenite.core.Master/GetFileInformation',
+                request_serializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+                response_deserializer=helenite_dot_core_dot_core__pb2.FileInfo.FromString,
+                _registered_method=True)
         self.GetChunkInformation = channel.unary_unary(
                 '/helenite.core.Master/GetChunkInformation',
                 request_serializer=helenite_dot_core_dot_core__pb2.ChunkHandle.SerializeToString,
@@ -100,6 +105,12 @@ class MasterServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def AllocateChunk(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFileInformation(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -145,6 +156,11 @@ def add_MasterServicer_to_server(servicer, server):
                     servicer.AllocateChunk,
                     request_deserializer=helenite_dot_core_dot_core__pb2.AllocateChunkRequest.FromString,
                     response_serializer=helenite_dot_core_dot_core__pb2.ChunkInformation.SerializeToString,
+            ),
+            'GetFileInformation': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFileInformation,
+                    request_deserializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.FromString,
+                    response_serializer=helenite_dot_core_dot_core__pb2.FileInfo.SerializeToString,
             ),
             'GetChunkInformation': grpc.unary_unary_rpc_method_handler(
                     servicer.GetChunkInformation,
@@ -270,6 +286,33 @@ class Master(object):
             '/helenite.core.Master/AllocateChunk',
             helenite_dot_core_dot_core__pb2.AllocateChunkRequest.SerializeToString,
             helenite_dot_core_dot_core__pb2.ChunkInformation.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFileInformation(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.core.Master/GetFileInformation',
+            google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+            helenite_dot_core_dot_core__pb2.FileInfo.FromString,
             options,
             channel_credentials,
             insecure,

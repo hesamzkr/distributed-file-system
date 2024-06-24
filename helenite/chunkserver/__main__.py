@@ -35,7 +35,9 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
                 await self.stub.RegisterChunkServer(
                     ChunkServerAddress(address=config.HOST)
                 )
-                logging.info(f"Registered chunk server with master at address {config.MASTER_ADDRESS}")
+                logging.info(
+                    f"Registered chunk server with master at address {config.MASTER_ADDRESS}"
+                )
                 break
             except Exception as e:
                 logging.error(f"Error registering chunk server: {e}")
@@ -61,7 +63,9 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
 
         try:
             # TODO: Remove this shit (create the folders)
-            os.makedirs(os.path.join(config.NAMESPACE_DIR, request.filename), exist_ok=True)
+            os.makedirs(
+                os.path.join(config.NAMESPACE_DIR, request.filename), exist_ok=True
+            )
             os.makedirs(config.CHUNKS_DIR, exist_ok=True)
 
             # Write the chunk to disk
@@ -116,9 +120,11 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
         chunk_path = os.path.join(config.CHUNKS_DIR, request.handle)
 
         try:
+
+            print(chunk_path)
             with open(chunk_path, "rb") as f:
                 data = f.read()
-                return BytesValue(value=data)
+            return BytesValue(value=data)
         except FileNotFoundError:
             context.abort(grpc.StatusCode.NOT_FOUND, "Chunk not found")
 

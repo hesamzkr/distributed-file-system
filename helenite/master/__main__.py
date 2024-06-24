@@ -16,6 +16,7 @@ from helenite.core.core_pb2 import (
     ChunkInformation,
     ChunkServerAddress,
     CreateFileRequest,
+    FileInfo,
 )
 from helenite.master import config
 
@@ -40,19 +41,25 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         await self.redis.hset(
             f"file:{request.filename}", mapping={"size": request.size}
         )
+        # WARNING: This NEEDS be done right now (before the chunk allocation)
+        # right now it is working in lazy mode (it will be done when the first 
+        # chunk is allocated)
+        await self.DeleteFile(StringValue(value=request.filename), context)
         return BoolValue(value=True)
 
     async def DeleteFile(
-        self, request: CreateFileRequest, context: grpc.ServicerContext
+        self, request: StringValue, context: grpc.ServicerContext
     ) -> BoolValue:
-        if await self.redis.exists(f"file:{request.filename}"):
-            await self.redis.delete(f"file:{request.filename}")
-            await self.files_to_delete.put(request.filename)
+        filename = request.value
+
+        if await self.redis.exists(f"file:{filename}"):
+            await self.redis.delete(f"file:{filename}")
+            await self.files_to_delete.put(filename)
             return BoolValue(value=True)
         else:
             return BoolValue(value=False)
 
-    async def GetFileSize(self, request: StringValue, context):
+    async def GetFileSize(self, request: StringValue, context: grpc.ServicerContext):
         try:
             filesize = await self.redis.hget(f"file:{request.value}", "filesize")
             return StringValue(value=filesize)
@@ -60,8 +67,20 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             logging.error(f"Error getting file size: {e}")
             return StringValue(value="0")
 
+    async def GetFileInformation(
+        self, request: StringValue, context: grpc.ServicerContext
+    ):
+        try:
+            filename = request.value
+            chunks = await self.redis.lrange(f"chunks:{filename}", 0, -1)
+            return FileInfo(chunks=chunks)
+        except Exception as e:
+            logging.error(f"Error getting file information: {e}")
+            context.abort(grpc.StatusCode.INTERNAL, "Error getting all the chunks")
+            return FileInfo(chunks=[])
+
     async def AllocateChunk(
-        self, request: AllocateChunkRequest, context
+        self, request: AllocateChunkRequest, context: grpc.ServicerContext
     ) -> ChunkInformation:
         # Generate a random chunk handle and select random chunk servers
         handle = handle = uuid.uuid4().hex
