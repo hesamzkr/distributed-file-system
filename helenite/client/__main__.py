@@ -1,3 +1,4 @@
+import json
 from typing import Annotated
 
 import grpc
@@ -5,6 +6,7 @@ import uvicorn
 from fastapi import FastAPI, File, Response, UploadFile, status
 from fastapi.responses import StreamingResponse
 from google.protobuf.wrappers_pb2 import StringValue
+from redis.asyncio import Redis
 
 from helenite.client import config
 from helenite.core import core_pb2_grpc
@@ -14,6 +16,8 @@ from helenite.core.core_pb2 import (
     ChunkHandle,
     CreateFileRequest,
 )
+
+redis_client = Redis.from_url(config.REDIS_URL, decode_responses=True)
 
 app = FastAPI(
     title="Helenite Client",
@@ -43,6 +47,14 @@ async def create_file(
             info = await stub.AllocateChunk(req)
             handlers.append(info)
 
+        file_info = {
+            "chunks": [
+                {"handle": handler.handle, "servers": [server.address for server in handler.servers]}
+                for handler in handlers
+            ]
+        }
+        await redis_client.set(f"client:{file.filename}", json.dumps(file_info))
+
     p = 0
     while True:
         chunk = await file.read(1024)
@@ -63,24 +75,34 @@ async def create_file(
 
 @app.get("/read-file/{filename}")
 async def read_file(filename: str):
-    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
-        stub = core_pb2_grpc.MasterStub(channel)
+    # await redis_client.delete(filename)
+    file_info = await redis_client.get(f"client:{filename}")
+    if file_info:
+        file_info_json = json.loads(file_info)
+    else:
+        async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+            stub = core_pb2_grpc.MasterStub(channel)
 
-        req = StringValue(value=filename)
-        file_info = await stub.GetFileInformation(req)
-        ret = []
+            req = StringValue(value=filename)
+            file_info = await stub.GetFileInformation(req)
+            file_info_json = {
+                "chunks": []
+            }
 
-        for chunk in file_info.chunks:
-            info = await stub.GetChunkInformation(ChunkHandle(handle=chunk))
-            ret.append((chunk, info.servers[0].address))
+            for chunk in file_info.chunks:
+                info = await stub.GetChunkInformation(ChunkHandle(handle=chunk))
+                file_info_json["chunks"].append(
+                    {"handle": chunk, "servers": [server.address for server in info.servers]}
+                )
+            await redis_client.set(f"client:{filename}", json.dumps(file_info_json))
 
     async def iter_file():
-        for chunk, address in ret:
-            address = f"{address}:50052"
+        for chunk in file_info_json["chunks"]:
+            address = f"{chunk['servers'][0]}:50052"
             async with grpc.aio.insecure_channel(address) as channel:
                 stub = core_pb2_grpc.ChunkServerStub(channel)
 
-                data = await stub.ReadChunk(ChunkHandle(handle=chunk))
+                data = await stub.ReadChunk(ChunkHandle(handle=chunk["handle"]))
                 yield data.value
 
     return StreamingResponse(
