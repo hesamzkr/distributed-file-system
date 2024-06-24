@@ -30,10 +30,14 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         # self.chunks_to_delete = asyncio.Queue()
         self.files_to_delete = asyncio.Queue()  # optimized for O(1) deletion
 
+        # Locks
+        self.delete_lock = asyncio.Lock()
+        self.chunkservers_lock = asyncio.Lock()
+
         # Register the scheduler to run every 60 seconds
         # and check if are still alive and woking
-        # scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
-        # scheduler.add_job(self.garbage_collector, "interval", seconds=60)
+        scheduler.add_job(self.check_chunkservers, "interval", seconds=60)
+        scheduler.add_job(self.garbage_collector, "interval", seconds=60)
 
     async def CreateFile(
         self, request: CreateFileRequest, context: grpc.ServicerContext
@@ -54,7 +58,8 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
 
         if await self.redis.exists(f"file:{filename}"):
             await self.redis.delete(f"file:{filename}")
-            await self.files_to_delete.put(filename)
+            async with self.delete_lock:
+                await self.files_to_delete.put(filename)
             return BoolValue(value=True)
         else:
             return BoolValue(value=False)
@@ -111,7 +116,8 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     async def RegisterChunkServer(
         self, request: ChunkServerAddress, context: grpc.ServicerContext
     ) -> BoolValue:
-        self.chunkservers.add(request.address)
+        async with self.chunkservers_lock:
+            self.chunkservers.add(request.address)
         logging.info(f"Registered chunk server [{request.address}] successfully")
         return BoolValue(value=True)
 
@@ -119,7 +125,8 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         self, request: ChunkServerAddress, context: grpc.ServicerContext
     ):
         try:
-            self.chunkservers.remove(request.address)
+            async with self.chunkservers_lock:
+                self.chunkservers.remove(request.address)
             logging.info(f"Unregistered chunk server [{request.address}] successfully")
         except KeyError:
             logging.error(
@@ -129,44 +136,51 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         return Empty()
 
     async def check_chunkservers(self):
-        try:
-            for server in self.chunkservers:
-                try:
-                    address = f"{server}:50052"
-                    async with grpc.aio.insecure_channel(address) as channel:
-                        stub = core_pb2_grpc.ChunkServerStub(channel)
-                        await stub.Heartbeat(Empty())
-                except Exception as e:
-                    logging.error(f"Chunk server {server} is not alive anymore: {e}")
-                    self.chunkservers.remove(server)
-        except RuntimeError:
-            # TODO: this should only happens when the list changes over the iteration
-            pass
+        await self.chunkservers_lock.acquire()
+
+        for server in self.chunkservers:
+            try:
+                address = f"{server}:50052"
+                async with grpc.aio.insecure_channel(address) as channel:
+                    stub = core_pb2_grpc.ChunkServerStub(channel)
+                    await stub.Heartbeat(Empty())
+            except Exception as e:
+                logging.error(f"Chunk server {server} is not alive anymore: {e}")
+                self.chunkservers.remove(server)
+
+        self.chunkservers_lock.release()
+
+    async def delete_file(self, filename: str):
+        # Get all the servers that have the chunks of the file
+        servers = set()
+        chunks = await self.redis.lrange(f"chunks:{filename}", 0, -1)
+        for chunk in chunks:
+            servers.update(await self.redis.lrange(f"servers:{chunk}", 0, -1))
+
+        # Send a delete request to all the servers
+        # TODO: This is not optimal, we should send the delete request in parallel
+        # to all the servers. This is just a simple implementation
+        # NOTE: This is synchronous, in order to avoid inconsistencies
+        for server in servers:
+            address = f"{server}:50052"
+            async with grpc.aio.insecure_channel(address) as channel:
+                stub = core_pb2_grpc.ChunkServerStub(channel)
+                await stub.DeleteFile(StringValue(value=filename))
 
     async def garbage_collector(self):
+        await self.delete_lock.acquire()
+
         while not self.files_to_delete.empty():
             filename = self.files_to_delete.get_nowait()
             try:
-                servers = set()
-                chunks = await self.redis.lrange(f"chunks:{filename}", 0, -1)
-                for chunk in chunks:
-                    servers.update(await self.redis.lrange(f"servers:{chunk}", 0, -1))
-
-                for server in servers:
-                    try:
-                        address = f"{server}:50052"
-                        async with grpc.aio.insecure_channel(address) as channel:
-                            stub = core_pb2_grpc.ChunkServerStub(channel)
-                            await stub.DeleteFile(StringValue(value=filename))
-                    except Exception as e:
-                        logging.error(
-                            f"Error deleting sending delete request to chunk server {server}: {e}"
-                        )
+                await self.delete_file(filename)
             except Exception as e:
                 await self.files_to_delete.put(filename)
                 logging.error(
                     f"Error deleting file {filename}: {e}. Retrying in 60 seconds..."
                 )
+
+        self.delete_lock.release()
 
 
 async def serve() -> None:
