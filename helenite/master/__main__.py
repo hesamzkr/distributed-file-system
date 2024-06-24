@@ -42,13 +42,15 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     async def CreateFile(
         self, request: CreateFileRequest, context: grpc.ServicerContext
     ) -> BoolValue:
-        await self.redis.hset(
-            f"file:{request.filename}", mapping={"size": request.size}
-        )
-        # WARNING: This NEEDS be done right now (before the chunk allocation)
-        # right now it is working in lazy mode (it will be done when the first 
-        # chunk is allocated)
-        await self.DeleteFile(StringValue(value=request.filename), context)
+        async with self.redis.pipeline() as pipe:
+            if await pipe.exists(f"file:{request.filename}"):
+                await pipe.delete(f"file:{request.filename}")
+
+                # Delete it right now
+                await self.delete_file(request.filename)
+            await pipe.hset(f"file:{request.filename}", mapping={"size": request.size})
+            await pipe.execute()
+
         return BoolValue(value=True)
 
     async def DeleteFile(
@@ -56,13 +58,14 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     ) -> BoolValue:
         filename = request.value
 
-        if await self.redis.exists(f"file:{filename}"):
-            await self.redis.delete(f"file:{filename}")
-            async with self.delete_lock:
-                await self.files_to_delete.put(filename)
-            return BoolValue(value=True)
-        else:
-            return BoolValue(value=False)
+        async with self.redis.pipeline() as pipe:
+            if await pipe.exists(f"file:{filename}"):
+                await pipe.delete(f"file:{filename}")
+                async with self.delete_lock:
+                    await self.files_to_delete.put(filename)
+                return BoolValue(value=True)
+            else:
+                return BoolValue(value=False)
 
     async def GetFileSize(self, request: StringValue, context: grpc.ServicerContext):
         try:
