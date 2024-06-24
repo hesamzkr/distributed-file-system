@@ -15,5 +15,5 @@ ADD ./requirements.txt /app/
 RUN pip3 install -r requirements.txt
 
 # Copy project
-ADD ./src /app/src
+ADD ./ /app/
 ENV PYTHONPATH /app

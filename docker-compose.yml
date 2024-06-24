@@ -3,21 +3,43 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    command: python -m helenite.master
+    depends_on:
+      - redis-master
     ports:
       - "50051:50051"
     volumes:
-    - type: bind
-      source: .
-      target: /app
+      - dfsvolume:/app/master
+    networks:
+      - dfsnetwork
 
   chunkserver:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "50052:50052"
+    command: python -m helenite.chunkserver
+    depends_on:
+      - master
     volumes:
-    - type: bind
-      source: .
-      target: /app
-  
+      - dfsvolume:/app/chunkserver/
+    networks:
+      - dfsnetwork
+    deploy:
+      replicas: 2
+
+  redis-master:
+    image: redis:latest 
+    environment:
+      - REDIS_URL=redis://localhost:6379
+    volumes:
+      - dfsvolume:/app/data/
+    networks:
+      - dfsnetwork
+
+
+networks:
+  dfsnetwork:
+    driver: bridge
+
+volumes:
+  dfsvolume:

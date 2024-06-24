@@ -9,6 +9,10 @@ __pycache__/
 # Vscode
 .vscode/
 
+# Data
+namespace/
+chunks/
+
 # Distribution / packaging
 .Python
 build/
