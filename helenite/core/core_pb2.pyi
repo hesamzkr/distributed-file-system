@@ -33,9 +33,19 @@ class ChunkInformation(_message.Message):
     __slots__ = ("handle", "servers")
     HANDLE_FIELD_NUMBER: _ClassVar[int]
     SERVERS_FIELD_NUMBER: _ClassVar[int]
-    handle: ChunkHandle
+    handle: str
     servers: _containers.RepeatedCompositeFieldContainer[ChunkServerAddress]
-    def __init__(self, handle: _Optional[_Union[ChunkHandle, _Mapping]] = ..., servers: _Optional[_Iterable[_Union[ChunkServerAddress, _Mapping]]] = ...) -> None: ...
+    def __init__(self, handle: _Optional[str] = ..., servers: _Optional[_Iterable[_Union[ChunkServerAddress, _Mapping]]] = ...) -> None: ...
+
+class ChunkData(_message.Message):
+    __slots__ = ("filename", "handle", "data")
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
+    HANDLE_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    filename: str
+    handle: str
+    data: bytes
+    def __init__(self, filename: _Optional[str] = ..., handle: _Optional[str] = ..., data: _Optional[bytes] = ...) -> None: ...
 
 class ChunkServerAddress(_message.Message):
     __slots__ = ("address",)

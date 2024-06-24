@@ -6,3 +6,4 @@ load_dotenv(find_dotenv())
 
 REDIS_URL = os.getenv("REDIS_URL")
 REPLICATION_FACTOR = int(os.getenv("REPLICATION_FACTOR", 1))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 1024))

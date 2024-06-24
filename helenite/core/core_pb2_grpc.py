@@ -381,6 +381,21 @@ class ChunkServerStub(object):
                 request_serializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
                 _registered_method=True)
+        self.WriteChunk = channel.unary_unary(
+                '/helenite.core.ChunkServer/WriteChunk',
+                request_serializer=helenite_dot_core_dot_core__pb2.ChunkData.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+                _registered_method=True)
+        self.ReadChunk = channel.unary_unary(
+                '/helenite.core.ChunkServer/ReadChunk',
+                request_serializer=helenite_dot_core_dot_core__pb2.ChunkHandle.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BytesValue.FromString,
+                _registered_method=True)
+        self.ReplicateChunk = channel.unary_unary(
+                '/helenite.core.ChunkServer/ReplicateChunk',
+                request_serializer=helenite_dot_core_dot_core__pb2.ChunkData.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+                _registered_method=True)
 
 
 class ChunkServerServicer(object):
@@ -398,6 +413,24 @@ class ChunkServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def WriteChunk(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ReadChunk(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ReplicateChunk(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChunkServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -409,6 +442,21 @@ def add_ChunkServerServicer_to_server(servicer, server):
             'DeleteFile': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteFile,
                     request_deserializer=google_dot_protobuf_dot_wrappers__pb2.StringValue.FromString,
+                    response_serializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.SerializeToString,
+            ),
+            'WriteChunk': grpc.unary_unary_rpc_method_handler(
+                    servicer.WriteChunk,
+                    request_deserializer=helenite_dot_core_dot_core__pb2.ChunkData.FromString,
+                    response_serializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.SerializeToString,
+            ),
+            'ReadChunk': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReadChunk,
+                    request_deserializer=helenite_dot_core_dot_core__pb2.ChunkHandle.FromString,
+                    response_serializer=google_dot_protobuf_dot_wrappers__pb2.BytesValue.SerializeToString,
+            ),
+            'ReplicateChunk': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReplicateChunk,
+                    request_deserializer=helenite_dot_core_dot_core__pb2.ChunkData.FromString,
                     response_serializer=google_dot_protobuf_dot_wrappers__pb2.BoolValue.SerializeToString,
             ),
     }
@@ -465,6 +513,87 @@ class ChunkServer(object):
             target,
             '/helenite.core.ChunkServer/DeleteFile',
             google_dot_protobuf_dot_wrappers__pb2.StringValue.SerializeToString,
+            google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def WriteChunk(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.core.ChunkServer/WriteChunk',
+            helenite_dot_core_dot_core__pb2.ChunkData.SerializeToString,
+            google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ReadChunk(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.core.ChunkServer/ReadChunk',
+            helenite_dot_core_dot_core__pb2.ChunkHandle.SerializeToString,
+            google_dot_protobuf_dot_wrappers__pb2.BytesValue.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ReplicateChunk(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/helenite.core.ChunkServer/ReplicateChunk',
+            helenite_dot_core_dot_core__pb2.ChunkData.SerializeToString,
             google_dot_protobuf_dot_wrappers__pb2.BoolValue.FromString,
             options,
             channel_credentials,
