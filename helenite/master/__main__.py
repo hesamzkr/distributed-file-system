@@ -6,7 +6,7 @@ import uuid
 import grpc
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from google.protobuf.empty_pb2 import Empty
-from google.protobuf.wrappers_pb2 import BoolValue, StringValue
+from google.protobuf.wrappers_pb2 import BoolValue, Int64Value, StringValue
 from redis.asyncio import Redis
 
 from helenite.core import core_pb2_grpc
@@ -67,21 +67,14 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             else:
                 return BoolValue(value=False)
 
-    async def GetFileSize(self, request: StringValue, context: grpc.ServicerContext):
-        try:
-            filesize = await self.redis.hget(f"file:{request.value}", "filesize")
-            return StringValue(value=filesize)
-        except Exception as e:
-            logging.error(f"Error getting file size: {e}")
-            return StringValue(value="0")
-
     async def GetFileInformation(
         self, request: StringValue, context: grpc.ServicerContext
     ):
         try:
             filename = request.value
             chunks = await self.redis.lrange(f"chunks:{filename}", 0, -1)
-            return FileInfo(chunks=chunks)
+            filesize = await self.redis.hget(f"file:{request.value}", "filesize")
+            return FileInfo(size=filesize, chunks=chunks)
         except Exception as e:
             logging.error(f"Error getting file information: {e}")
             context.abort(grpc.StatusCode.INTERNAL, "Error getting all the chunks")

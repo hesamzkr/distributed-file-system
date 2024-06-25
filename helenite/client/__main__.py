@@ -115,6 +115,29 @@ async def read_file(filename: str):
         status_code=status.HTTP_200_OK,
     )
 
+@app.delete("/delete-file/{filename}")
+async def delete_file(filename: str):
+    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+        stub = core_pb2_grpc.MasterStub(channel)
+
+        req = StringValue(value=filename)
+        await stub.DeleteFile(req)
+
+    await redis_client.delete(f"client:{filename}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.get("/get-file-info/{filename}")
+async def get_file_info(filename: str):
+    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+        stub = core_pb2_grpc.MasterStub(channel)
+
+        req = StringValue(value=filename)
+        file_info = await stub.GetFileInformation(req)
+        return {
+            "filename": filename,
+            "size": file_info.size,
+            "chunks": len(file_info.chunks),
+        }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8000)
