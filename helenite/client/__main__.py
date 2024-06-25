@@ -1,10 +1,11 @@
 import json
+import tempfile
 from typing import Annotated
 
 import grpc
 import uvicorn
-from fastapi import FastAPI, File, Response, UploadFile, status
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, File, Query, Response, UploadFile, status
+from fastapi.responses import FileResponse, StreamingResponse
 from google.protobuf.wrappers_pb2 import StringValue
 from redis.asyncio import Redis
 
@@ -77,7 +78,7 @@ async def create_file(
 
 
 @app.get("/read-file/{filename}")
-async def read_file(filename: str):
+async def read_file(filename: str, stream: bool = Query(default=True)):
     # await redis_client.delete(filename)
     file_info = await redis_client.get(f"client:{filename}")
     if file_info:
@@ -108,6 +109,13 @@ async def read_file(filename: str):
 
                 data = await stub.ReadChunk(ChunkHandle(handle=chunk["handle"]))
                 yield data.value
+
+    if not stream:
+        with tempfile.TemporaryFile("wb") as file:
+            async for chunk in iter_file():
+                file.write(chunk)
+            file.seek(0)
+            return FileResponse(file.name, filename=filename)
 
     return StreamingResponse(
         iter_file(),
