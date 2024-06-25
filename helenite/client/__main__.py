@@ -3,7 +3,7 @@ from typing import Annotated
 
 import grpc
 import uvicorn
-from fastapi import FastAPI, File, Response, UploadFile, status
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import StreamingResponse
 from google.protobuf.wrappers_pb2 import StringValue
 from redis.asyncio import Redis
@@ -132,7 +132,13 @@ async def get_file_info(filename: str):
         stub = core_pb2_grpc.MasterStub(channel)
 
         req = StringValue(value=filename)
-        file_info = await stub.GetFileInformation(req)
+        try:
+            file_info = await stub.GetFileInformation(req)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from e
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from e
+        
         return {
             "filename": filename,
             "size": file_info.size,

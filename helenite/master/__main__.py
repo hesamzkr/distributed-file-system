@@ -6,7 +6,7 @@ import uuid
 import grpc
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from google.protobuf.empty_pb2 import Empty
-from google.protobuf.wrappers_pb2 import BoolValue, Int64Value, StringValue
+from google.protobuf.wrappers_pb2 import BoolValue, StringValue
 from redis.asyncio import Redis
 
 from helenite.core import core_pb2_grpc
@@ -28,7 +28,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         self.redis = Redis.from_url(config.REDIS_URL, decode_responses=True)
         self.chunkservers = set()
         # self.chunks_to_delete = asyncio.Queue()
-        self.files_to_delete = asyncio.Queue()  # optimized for O(1) deletion
+        self.files_to_delete = set()  # optimized for O(1) deletion
 
         # Locks
         self.delete_lock = asyncio.Lock()
@@ -62,7 +62,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             if await pipe.exists(f"file:{filename}"):
                 await pipe.delete(f"file:{filename}")
                 async with self.delete_lock:
-                    await self.files_to_delete.put(filename)
+                    self.files_to_delete.add(filename)
                 return BoolValue(value=True)
             else:
                 return BoolValue(value=False)
@@ -70,7 +70,9 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     async def GetFileInformation(
         self, request: StringValue, context: grpc.ServicerContext
     ):
-        if request.value in self.files_to_delete:
+        if request.value in self.files_to_delete or not await self.redis.exists(
+            f"file:{request.value}"
+        ):
             context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
             return FileInfo(chunks=[])
 
@@ -81,7 +83,9 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             return FileInfo(size=size, chunks=chunks)
         except Exception as e:
             logging.error(f"Error getting file information: {e}")
-            context.abort(grpc.StatusCode.INTERNAL, "Error getting all the chunks")
+            await context.abort(
+                grpc.StatusCode.INTERNAL, "Error getting all the chunks"
+            )
             return FileInfo(chunks=[])
 
     async def AllocateChunk(
@@ -117,6 +121,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             )
         except Exception as e:
             logging.error(f"Error getting chunk information: {e}")
+            context.abort(grpc.StatusCode.NOT_FOUND, "Chunk not found")
             return ChunkInformation(handle=request, servers=[])
 
     async def RegisterChunkServer(
@@ -180,12 +185,12 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     async def garbage_collector(self):
         await self.delete_lock.acquire()
 
-        while not self.files_to_delete.empty():
-            filename = self.files_to_delete.get_nowait()
+        while len(self.files_to_delete) != 0:
+            filename = self.files_to_delete.pop()
             try:
                 await self.delete_file(filename)
             except Exception as e:
-                await self.files_to_delete.put(filename)
+                self.files_to_delete.add(filename)
                 logging.error(
                     f"Error deleting file {filename}: {e}. Retrying in 60 seconds..."
                 )
