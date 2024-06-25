@@ -49,7 +49,10 @@ async def create_file(
 
         file_info = {
             "chunks": [
-                {"handle": handler.handle, "servers": [server.address for server in handler.servers]}
+                {
+                    "handle": handler.handle,
+                    "servers": [server.address for server in handler.servers],
+                }
                 for handler in handlers
             ]
         }
@@ -85,14 +88,15 @@ async def read_file(filename: str):
 
             req = StringValue(value=filename)
             file_info = await stub.GetFileInformation(req)
-            file_info_json = {
-                "chunks": []
-            }
+            file_info_json = {"chunks": []}
 
             for chunk in file_info.chunks:
                 info = await stub.GetChunkInformation(ChunkHandle(handle=chunk))
                 file_info_json["chunks"].append(
-                    {"handle": chunk, "servers": [server.address for server in info.servers]}
+                    {
+                        "handle": chunk,
+                        "servers": [server.address for server in info.servers],
+                    }
                 )
             await redis_client.set(f"client:{filename}", json.dumps(file_info_json))
 
