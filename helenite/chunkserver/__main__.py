@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import socket
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -24,17 +25,21 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
 
         asyncio.create_task(self.RegisterChunkServer())
 
+    def get_container_ip(self):
+        hostname = socket.gethostname()
+        return socket.gethostbyname(hostname)
+
     async def RegisterChunkServer(self) -> Empty:
         retry_count = 3
 
+        address = self.get_container_ip()
+        logging.info(address)
         while retry_count > 0:
             # Wait some time at the beginning
             await asyncio.sleep(5.0)
 
             try:
-                await self.stub.RegisterChunkServer(
-                    ChunkServerAddress(address=config.HOST)
-                )
+                await self.stub.RegisterChunkServer(ChunkServerAddress(address=address))
                 logging.info(
                     f"Registered chunk server with master at address {config.MASTER_ADDRESS}"
                 )
