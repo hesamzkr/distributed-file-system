@@ -149,6 +149,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
     async def check_chunkservers(self):
         await self.chunkservers_lock.acquire()
 
+        to_remove = []
         for server in self.chunkservers:
             try:
                 address = f"{server}:50052"
@@ -157,7 +158,10 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
                     await stub.Heartbeat(Empty())
             except Exception as e:
                 logging.error(f"Chunk server {server} is not alive anymore: {e}")
-                self.chunkservers.remove(server)
+                to_remove.append(server)
+
+        for server in to_remove:
+            self.chunkservers.remove(server)
 
         self.chunkservers_lock.release()
 
