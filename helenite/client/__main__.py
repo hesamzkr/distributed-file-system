@@ -4,7 +4,7 @@ from typing import Annotated
 
 import grpc
 import uvicorn
-from fastapi import FastAPI, File, HTTPException, Response, UploadFile, status
+from fastapi import FastAPI, File, HTTPException, Query, Response, UploadFile, status
 from fastapi.responses import FileResponse, StreamingResponse
 from google.protobuf.wrappers_pb2 import StringValue
 from redis.asyncio import Redis
