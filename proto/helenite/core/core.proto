@@ -8,7 +8,6 @@ import "google/protobuf/empty.proto";
 service Master {
   rpc CreateFile(CreateFileRequest) returns (google.protobuf.BoolValue) {}
   rpc DeleteFile(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
-  rpc GetFileSize(google.protobuf.StringValue) returns (google.protobuf.Int64Value) {}
   rpc AllocateChunk(AllocateChunkRequest) returns (ChunkInformation) {}
   rpc GetFileInformation(google.protobuf.StringValue) returns (FileInfo) {}
   rpc GetChunkInformation(ChunkHandle) returns (ChunkInformation) {}
@@ -54,5 +53,6 @@ message ChunkServerAddress {
 }
 
 message FileInfo {
-  repeated string chunks = 1;
+  int64 size = 1;
+  repeated string chunks = 2;
 }

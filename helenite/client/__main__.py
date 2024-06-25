@@ -3,7 +3,7 @@ from typing import Annotated
 
 import grpc
 import uvicorn
-from fastapi import FastAPI, File, Response, UploadFile, status
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import StreamingResponse
 from google.protobuf.wrappers_pb2 import StringValue
 from redis.asyncio import Redis
@@ -115,6 +115,35 @@ async def read_file(filename: str):
         status_code=status.HTTP_200_OK,
     )
 
+@app.delete("/delete-file/{filename}")
+async def delete_file(filename: str):
+    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+        stub = core_pb2_grpc.MasterStub(channel)
+
+        req = StringValue(value=filename)
+        await stub.DeleteFile(req)
+
+    await redis_client.delete(f"client:{filename}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.get("/get-file-info/{filename}")
+async def get_file_info(filename: str):
+    async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
+        stub = core_pb2_grpc.MasterStub(channel)
+
+        req = StringValue(value=filename)
+        try:
+            file_info = await stub.GetFileInformation(req)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from e
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from e
+        
+        return {
+            "filename": filename,
+            "size": file_info.size,
+            "chunks": len(file_info.chunks),
+        }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8000)
