@@ -84,7 +84,9 @@ async def read_file(filename: str):
                 yield data.value
 
     return StreamingResponse(
-        iter_file(), media_type="application/octet-stream", status_code=status.HTTP_200_OK
+        iter_file(),
+        media_type="application/octet-stream",
+        status_code=status.HTTP_200_OK,
     )
 
 
