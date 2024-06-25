@@ -1,19 +1,25 @@
-FROM python:3.12-alpine
+# Use an official Python runtime as a parent image
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Set environment variables
+ENV POETRY_VERSION=1.8.3
+ENV POETRY_HOME="/opt/poetry"
+ENV POETRY_VIRTUALENVS_CREATE=false
+ENV PATH="$POETRY_HOME/bin:$PATH"
 
-#timezone
-ENV TZ=Europe/Warsaw
-RUN ln -snf /usr/share/zoneinfo/Europe/$TZ /etc/localtime && echo $TZ > /etc/timezone
+# Install Poetry
+RUN apt-get update && apt-get install -y curl \
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    && apt-get clean
 
-RUN mkdir /app
+# Set the working directory in the container
 WORKDIR /app
 
-# Install dependencies
-ADD ./requirements.txt /app/
-RUN pip3 install -r requirements.txt
+# Copy only the poetry files to set up the environment
+COPY pyproject.toml poetry.lock ./
 
-# Copy project
-ADD ./ /app/
-ENV PYTHONPATH /app
+# Install the dependencies
+RUN poetry install --no-root
+
+# Copy the rest of the application code
+COPY . .

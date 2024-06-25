@@ -36,11 +36,23 @@ services:
       - "8000:8000"
     volumes:
       - dfsvolume:/app/client
+    networks:
+      - dfsnetwork
+
+  redis-client:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - dfsvolume:/app/data-master/
+    networks:
+      - dfsnetwork
+
 
   redis-master:
     image: redis:latest
     volumes:
-      - dfsvolume:/app/data/
+      - dfsvolume:/app/data-client/
     networks:
       - dfsnetwork
 
