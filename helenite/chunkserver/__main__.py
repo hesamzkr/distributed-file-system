@@ -23,6 +23,9 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
         self.channel = grpc.aio.insecure_channel(config.MASTER_ADDRESS)
         self.stub = core_pb2_grpc.MasterStub(self.channel)
 
+        self.my_address = self.get_container_ip()
+        logging.info(f"My Address: {self.my_address}")
+
         asyncio.create_task(self.RegisterChunkServer())
 
     def get_container_ip(self):
@@ -32,14 +35,12 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
     async def RegisterChunkServer(self) -> Empty:
         retry_count = 3
 
-        address = self.get_container_ip()
-        logging.info(address)
         while retry_count > 0:
             # Wait some time at the beginning
             await asyncio.sleep(5.0)
 
             try:
-                await self.stub.RegisterChunkServer(ChunkServerAddress(address=address))
+                await self.stub.RegisterChunkServer(ChunkServerAddress(address=self.my_address))
                 logging.info(
                     f"Registered chunk server with master at address {config.MASTER_ADDRESS}"
                 )
@@ -57,7 +58,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
     ) -> ChunkInformation | None:
         info = await self.stub.GetChunkInformation(StringValue(value=request.handle))
 
-        if config.HOST not in [server.address for server in info.servers]:
+        if self.my_address not in [server.address for server in info.servers]:
             logging.error(
                 "Probably someone is trying to write a chunk to a chunk server where it is not supposed to be"
             )
@@ -106,7 +107,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
 
         # Replicate the chunk to other chunk servers
         for server in info.servers:
-            if server.address == config.HOST:
+            if server.address == self.my_address:
                 continue
 
             try:

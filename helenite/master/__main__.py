@@ -63,6 +63,8 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
                 await pipe.delete(f"file:{filename}")
                 async with self.delete_lock:
                     self.files_to_delete.add(filename)
+
+                await pipe.execute()
                 return BoolValue(value=True)
             else:
                 return BoolValue(value=False)
