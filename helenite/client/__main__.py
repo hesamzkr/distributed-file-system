@@ -89,7 +89,11 @@ async def read_file(filename: str, stream: bool = Query(default=True)):
         async with grpc.aio.insecure_channel(config.MASTER_ADDRESS) as channel:
             stub = core_pb2_grpc.MasterStub(channel)
             req = StringValue(value=filename)
-            file_info = await stub.GetFileInformation(req)
+            try:
+                file_info = await stub.GetFileInformation(req)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from e
             file_info_json = {"chunks": []}
             for chunk in file_info.chunks:
                 info = await stub.GetChunkInformation(ChunkHandle(handle=chunk))
