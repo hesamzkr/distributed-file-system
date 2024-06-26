@@ -75,7 +75,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         if request.value in self.files_to_delete or not await self.redis.exists(
             f"file:{request.value}"
         ):
-            context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
+            await context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
             return FileInfo(chunks=[])
 
         try:
@@ -96,7 +96,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
         if request.filename in self.files_to_delete or not await self.redis.exists(
             f"file:{request.filename}"
         ):
-            context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
+            await context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
             return ChunkInformation(handle="", servers=[])
 
         # Generate a random chunk handle and select random chunk servers
@@ -123,7 +123,7 @@ class MasterServicer(core_pb2_grpc.MasterServicer):
             )
         except Exception as e:
             logging.error(f"Error getting chunk information: {e}")
-            context.abort(grpc.StatusCode.NOT_FOUND, "Chunk not found")
+            await context.abort(grpc.StatusCode.NOT_FOUND, "Chunk not found")
             return ChunkInformation(handle=request, servers=[])
 
     async def RegisterChunkServer(

@@ -62,7 +62,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
             logging.error(
                 "Probably someone is trying to write a chunk to a chunk server where it is not supposed to be"
             )
-            context.abort(
+            await context.abort(
                 grpc.StatusCode.NOT_FOUND, "Chunk server not in chunk information"
             )
             return
@@ -85,7 +85,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
             return info
         except Exception as e:
             logging.error(f"Error writing chunk to disk: {e}")
-            context.abort(grpc.StatusCode.INTERNAL, "Error writing chunk to disk")
+            await context.abort(grpc.StatusCode.INTERNAL, "Error writing chunk to disk")
 
             return None
 
@@ -130,7 +130,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
                 data = f.read()
             return BytesValue(value=data)
         except FileNotFoundError:
-            context.abort(grpc.StatusCode.NOT_FOUND, "Chunk not found")
+            await context.abort(grpc.StatusCode.NOT_FOUND, "Chunk not found")
 
         return BytesValue()
 
@@ -140,7 +140,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
         file_dir = os.path.join(config.NAMESPACE_DIR, request.value)
 
         if not os.path.exists(file_dir):
-            context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
+            await context.abort(grpc.StatusCode.NOT_FOUND, "File not found")
             return
 
         # TODO: This can leave the file in an inconsistent state if it fails
@@ -161,7 +161,7 @@ class ChunkServer(core_pb2_grpc.ChunkServerServicer):
             return BoolValue(value=True)
         except Exception as e:
             logging.error(f"Error deleting file: {e}")
-            context.abort(grpc.StatusCode.INTERNAL, "Error deleting file")
+            await context.abort(grpc.StatusCode.INTERNAL, "Error deleting file")
             return BoolValue(value=False)
 
 
