@@ -12,6 +12,7 @@ A simple distributed file system similar to Google File System (GFS)
   - [Installation](#installation)
   - [Generate Python Code](#generate-python-code)
 - [How to Run](#how-to-run)
+- [How to Use](#how-to-use)
 
 ## Architecture
 
