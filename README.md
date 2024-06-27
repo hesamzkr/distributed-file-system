@@ -31,6 +31,7 @@ A simple distributed file system similar to Google File System (GFS)
 
 ### Client
 
+- Acts as the entry point of the system as an HTTP server which interacts with other parts of the system using gRPC.
 - Asks master node to create a file with some size.
 - Send file chunks to primary chunk server.
 - Ask the master node for a file and get list of chunks.
@@ -98,5 +99,9 @@ This will start the following services:
 - one master node port forwarded. Also on network with chunkservers and redis-master.
 - x chunk servers depedning on the docker-compose.yml file
 
+## How to Use
+
+After following the steps in the [How to Run](#how-to-run) section, you can use the client to interact with the system.
+
 Open http://localhost:8000/docs to see the client API documentation.
-Using the interactive documentation you can use the client to interact with the system.
+Using the interactive documentation or any other http client send requests to the file system's client to interact with the system.
